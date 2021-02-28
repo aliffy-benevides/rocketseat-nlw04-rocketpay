@@ -2,22 +2,22 @@ defmodule Rocketpay.Accounts.Operation do
   alias Ecto.Multi
   alias Rocketpay.Account
 
-  def call(%{"id" => id, "value" => value}, operation, task_prefix \\ nil) do
+  def call(%{"id" => id, "value" => value}, operation, prefix \\ nil) do
     Multi.new()
-    |> Multi.run(task_name(task_prefix, :get_account), fn repo, _changes -> get_account(repo, id) end)
-    |> Multi.run(task_name(task_prefix, :update_balance), fn repo, changes ->
-      account = Map.get(changes, task_name(task_prefix, :get_account))
+    |> Multi.run(proccess_name(prefix, :get_account), fn repo, _changes -> get_account(repo, id) end)
+    |> Multi.run(proccess_name(prefix, :update_balance), fn repo, changes ->
+      account = Map.get(changes, proccess_name(prefix, :get_account))
       update_balance(repo, account, value, operation)
     end)
-    |> Multi.run(task_name(task_prefix, :account), fn repo, changes ->
-      account = Map.get(changes, task_name(task_prefix, :update_balance))
+    |> Multi.run(proccess_name(prefix, :account), fn repo, changes ->
+      account = Map.get(changes, proccess_name(prefix, :update_balance))
       preload_user(repo, account)
     end)
   end
 
-  defp task_name(nil, task), do: task
-  defp task_name(task_prefix, task) do
-    "#{Atom.to_string(task_prefix)}_#{Atom.to_string(task)}"
+  defp proccess_name(nil, proccess), do: proccess
+  defp proccess_name(prefix, proccess) do
+    "#{Atom.to_string(prefix)}_#{Atom.to_string(proccess)}"
     |> String.to_atom()
   end
 
